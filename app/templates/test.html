@@ -1,0 +1,87 @@
+
+<!-- index.html -->
+{% extends 'layout.html' %}
+
+{% block title %}Home Page{% endblock %}
+
+{% block content %}
+    <div>
+        <canvas id="myChart"></canvas>
+    </div>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Flask에서 전달한 데이터를 파싱
+    var chartData = {{ chart_data | safe }};
+    var lineData = {{ limit_data | safe }};
+
+    var canvas = document.getElementById('myChart');
+
+    canvas.height = 50;
+
+    const minY = Math.min(...chartData.values, ...lineData.up, ...lineData.down) - 10;
+    const maxY = Math.max(...chartData.values, ...lineData.up, ...lineData.down) + 10;
+    // 차트 생성
+    console.log(chartData)
+    var ctx = document.getElementById('myChart').getContext('2d');
+    var myChart = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Data',
+                data: chartData.values.map((value, index) => ({ x: index, y: value })),  // x와 y 값을 매핑
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1,
+                pointRadius: 3,  // 점의 크기를 조절
+                type:'scatter'
+            },
+            {
+                label: 'Upper Limit',
+                data: lineData.up.map((value, index) => ({ x: index, y: value })),
+                borderColor: 'rgba(255, 0, 0, 1)',
+                borderWidth: 1,
+                fill: false,
+                type: 'line',  // Line 데이터 타입 설정
+                pointRadius: 0
+            },
+            {
+                label: 'Lower Limit',
+                data: lineData.down.map((value, index) => ({ x: index, y: value })),
+                borderColor: 'rgba(0, 0, 255, 1)',
+                borderWidth: 1,
+                fill: false,
+                type: 'line',
+                pointRadius: 0
+            }
+        ]
+        },
+        options: {
+            scales: {
+                x: {
+                    type: 'linear',
+                    position: 'bottom',
+                    min: 0,  // x 축의 최소값
+                    max: chartData.labels.length - 1,  // x 축의 최대값
+                    ticks: {
+                        callback: function(value, index, values) {
+                    // 각 x 축 눈금에 대한 콜백 함수
+                            return chartData.labels[index];
+                    }
+                    }
+                },
+                y: {
+                    beginAtZero: false,
+                    min: minY,
+                    max: maxY
+                },
+                
+            }
+        }
+    });
+</script>
+
+{% endblock %}
