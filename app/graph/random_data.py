@@ -27,21 +27,31 @@ def get_minY_maxY(data:List[Dict[str, Any]], headers:List[str]) -> Tuple[float, 
     return min_value, max_value
 
 
-def create_random_test_data() -> Tuple[Dict[Any, Any]]:
+def create_random_test_data() -> Dict[str, Any]:
     
 
     # 2022년 1월 1일부터 12월 31일까지의 날짜 생성
     start_date = datetime(2022, 1, 1)
     end_date = datetime(2022, 12, 31)
-    date_range = pd.date_range(start_date, end_date, freq='W')  # MS: Month Start
+    date_range = pd.date_range(start_date, end_date, freq='D')  # MS: Month Start
 
     # 날짜에 해당하는 문자열로 변환하여 labels 업데이트
     labels = [date.strftime('%Y-%m-%d') for date in date_range]
     # 랜덤한 값 생성 (여기서는 예시로 랜덤 값 생성)
-    values = np.random.randint(5, 65, size=(len(labels),)).tolist()
+    
+    
+    num_values = len(labels)
+
+    num_median = 30
+    values = [num_median]*num_values
+    
+    for _ in range(10):
+        values = [ (value + np.random.randint(-7, +7)) for value in values]
+    
     limit = {}
-    limit["up"] = [60]*len(labels)
-    limit["down"] = [10]*len(labels)
+    limit["up"] = [60]*num_values
+    limit["down"] = [0]*num_values
+    
     data = {
     'labels': labels,
     'values': values
@@ -50,5 +60,6 @@ def create_random_test_data() -> Tuple[Dict[Any, Any]]:
     dc = DataControl("data1")
     dc.delete_data_except_header()
     dc.save_data(data, limit)
+    
     data_ = dc.read_data()
     return data_

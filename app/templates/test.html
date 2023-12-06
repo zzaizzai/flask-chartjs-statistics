@@ -10,18 +10,48 @@
     </div>
 
 
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script>
+
+
 
     // Flask에서 전달한 데이터를 파싱
     var chartData = {{ chart_data | safe }};
 
 
+
+
+    var colorRed = 'rgba(255, 0, 0, 1)'
+    var colorBlue = 'rgba(0, 0, 255, 1)'
+    var colorData = 'rgba(75, 192, 192, 0.2)'
+    var colorBlack = 'rgba(0, 0, 0, 1)'
+
+
+
+    var legends = [
+        {
+            color:  colorData,
+            label: 'Data'
+        },
+        {
+            color:  colorRed,
+            label: 'Limit Up'
+        },
+        {
+            color:  colorBlue,
+            label: 'Limit Down'
+        },
+    ];
+
+
+
+
+
     var canvas = document.getElementById('myChart');
-    console.log(chartData)
-    canvas.height = 50;
+
+
+    canvas.height = 300;
 
     const minY = {{minY}} - 10
     const maxY = {{maxY}} + 10
@@ -45,12 +75,12 @@
                     const limitDown = chartData[index].limit_down;
 
                     if (value > limitUp || value < limitDown) {
-                        return 'rgba(255, 0, 0, 1)'; // Red color for points outside limits
+                        return colorRed; // Red color for points outside limits
                     } else {
-                        return 'rgba(75, 192, 192, 0.2)';
+                        return colorData;
                     }
                 },
-                borderColor: 'rgba(0, 0, 0, 1)',
+                borderColor: colorBlack,
                 borderWidth: 1,
                 pointRadius: 3,  // 점의 크기를 조절
                 type:'scatter'
@@ -58,7 +88,7 @@
             {
                 label: 'Upper Limit',
                 data: chartData.map( item => ({y: item.limit_up, x:item.datetime})), 
-                borderColor: 'rgba(255, 0, 0, 1)',
+                borderColor: legends[1].color,
                 borderWidth: 1,
                 fill: false,
                 type: 'line',  // Line 데이터 타입 설정
@@ -67,7 +97,7 @@
             {
                 label: 'Lower Limit',
                 data: chartData.map( item => ({y: item.limit_down, x:item.datetime})), 
-                borderColor: 'rgba(0, 0, 255, 1)',
+                borderColor: legends[2].color,
                 borderWidth: 1,
                 fill: false,
                 type: 'line',
@@ -76,6 +106,9 @@
         ]
         },
         options: {
+            responsive: true,
+            maintainAspectRatio: false,
+
             animation: {
             duration: 0, // Set duration to 0 to disable animations
             },  
@@ -87,20 +120,7 @@
                         parser: 'yyyy-MM-dd',
                         },
                     position: 'bottom',
-                    // min: 0,  // x 축의 최소값
-                    // max: chartData.labels.length - 1,  // x 축의 최대값
-                    // ticks: {
-                    //     callback: function(value, index, values) {
-                    // // 각 x 축 눈금에 대한 콜백 함수
-                    //         return chartData.labels[index];
-                    // },
                     stepSize: 2,
-                    // },
-                    // ticks: {
-                    //     callback: function(value) { 
-                    //         return new Date(value).toLocaleDateString('de-DE', {month:'short', year:'numeric'}); 
-                    //     },
-                    // },
                     
                 },
                 y: {
@@ -110,9 +130,28 @@
                     
                 },
                 
+            },
+            plugins: {            
+                legend: {
+                display: true,
+                    labels: {
+                        fontcolor: 'rgb(255, 99, 132)',
+                        fontsize: 22,
+                        generateLabels: function (chart) {
+                            return legends.map(function (color, index) {
+                                return {
+                                    text: legends[index].label,
+                                    fillStyle: legends[index].color,
+                                    strokeStyle:'rgba(0, 0, 0, 1)',
+                                };
+                            });
+                        }
+                    }
+                },
             }
         }
     });
+
 </script>
 
 {% endblock %}

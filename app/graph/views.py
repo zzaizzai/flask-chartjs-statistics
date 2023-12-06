@@ -12,11 +12,19 @@ def tasks_page():
 
 @graph_bp.route('/test')
 def test():
+    
+    #  random data
     data  = create_random_test_data()
-    # 데이터를 JSON 형식으로 변환하여 템플릿으로 전달
-    chart_data = json.dumps(data)
-    # print(chart_data)
+    
+    # convert to json
+    chart_data  = json.dumps(data)
+    
     minY, maxY = get_minY_maxY(data, ["value", 'limit_up', 'limit_down'])
 
+    context = {
+        'chart_data': chart_data,
+        'maxY': maxY,
+        'minY': minY
+    }
     
-    return render_template('test.html', chart_data=chart_data, maxY=maxY, minY=minY)
+    return render_template('test.html', **context)
