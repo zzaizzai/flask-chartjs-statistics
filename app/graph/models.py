@@ -1,8 +1,38 @@
 from flask import Flask, current_app
 import os
-from typing import Tuple, Dict, Any, List
+from typing import Tuple, Dict, Any, List, Optional
 import csv
+import json
 
+
+class AnalysisData():
+    
+    def __init__(self, chart_data: List[Dict[str, Any]]):
+        self.chart_data  = chart_data
+        
+    def create_analysis_data(self) -> Dict[str, Any]:
+        
+        keys =  list(self.chart_data[0].keys())
+
+        data_ave = {}
+        for key in keys:
+            values = [entry[key] for entry in self.chart_data]
+            
+            if self.get_average(values) is None:
+                continue
+            
+            data_ave[key] = self.get_average(values)
+                
+        return data_ave
+
+    def get_average(self, values: List[Any]) -> Optional[float]:
+        try:
+            average_value = round(sum(values) / len(values), 3)
+        except:
+            return None
+        
+        return average_value
+    
 class DataControl():
     
     

@@ -46,7 +46,8 @@ def create_random_test_data() -> Dict[str, Any]:
     values = [num_median]*num_values
     
     for _ in range(10):
-        values = [ (value + np.random.randint(-7, +7)) for value in values]
+        num_random = np.sqrt(np.random.randint(1, 100))
+        values = [ (value + np.random.randint(-num_random, num_random)) for value in values]
     
     limit = {}
     limit["up"] = [60]*num_values
@@ -62,4 +63,8 @@ def create_random_test_data() -> Dict[str, Any]:
     dc.save_data(data, limit)
     
     data_ = dc.read_data()
+    
     return data_
+
+
+
