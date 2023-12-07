@@ -5,24 +5,35 @@
 {% block title %}Home Page{% endblock %}
 
 {% block content %}
-    <div>
-        <canvas id="myChart"></canvas>
-    </div>
+<div>
+    <canvas id="myChart"></canvas>
+</div>
 
 
-    <h4>Average</h4>
-    <table>
+<h4>Average</h4>
+<table>
+    <tr>
+        <th>Key</th>
+        <th>Value</th>
+    </tr>
+    {% for key, value in analysis_data.items() %}
         <tr>
-            <th>Key</th>
-            <th>Value</th>
+            <td>{{ key }}</td>
+            <td>{{ value }}</td>
         </tr>
-        {% for key, value in analysis_data.items() %}
-            <tr>
-                <td>{{ key }}</td>
-                <td>{{ value }}</td>
-            </tr>
-        {% endfor %}
-    </table>
+    {% endfor %}
+</table>
+
+<h4>Clicked Data</h4>
+<table id="clickedDataTable">
+    <tr>
+        <th>Key</th>
+        <th>Value</th>
+    </tr>
+
+    <!--* Cliked Data Here!  -->
+
+</table>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -30,141 +41,189 @@
 
 
 
-    // Flask에서 전달한 데이터를 파싱
-    var chartData = {{ chart_data | safe }};
+// Flask에서 전달한 데이터를 파싱
+var chartData = {{ chart_data | safe }};
 
 
 
 
-    var colorRed = 'rgba(255, 0, 0, 1)'
-    var colorBlue = 'rgba(0, 0, 255, 1)'
-    var colorData = 'rgba(75, 192, 192, 0.2)'
-    var colorBlack = 'rgba(0, 0, 0, 1)'
+var colorRed = 'rgba(255, 0, 0, 1)'
+var colorBlue = 'rgba(0, 0, 255, 1)'
+var colorData = 'rgba(75, 192, 192, 0.2)'
+var colorBlack = 'rgba(0, 0, 0, 1)'
 
 
 
-    var legends = [
+var legends = [
+    {
+        color:  colorData,
+        label: 'Data'
+    },
+    {
+        color:  colorRed,
+        label: 'Limit Up'
+    },
+    {
+        color:  colorBlue,
+        label: 'Limit Down'
+    },
+];
+
+
+
+
+
+var canvas = document.getElementById('myChart');
+
+
+canvas.height = 300;
+
+const minY = {{minY}} - 10
+const maxY = {{maxY}} + 10
+// const minY = Math.min(...chartData.values, ...limitData.up, ...limitData.down) - 10;
+// const maxY = Math.max(...chartData.values, ...limitData.up, ...limitData.down) + 10;
+// 차트 생성
+
+var ctx = document.getElementById('myChart').getContext('2d');
+var myChart = new Chart(ctx, {
+    type: 'scatter',
+    data: {
+        datasets: [
         {
-            color:  colorData,
-            label: 'Data'
-        },
-        {
-            color:  colorRed,
-            label: 'Limit Up'
-        },
-        {
-            color:  colorBlue,
-            label: 'Limit Down'
-        },
-    ];
+            label: 'Data',
+            data: chartData.map( item => ({y: item.value, x:item.datetime})), 
+            backgroundColor: function(context) {
+            // Check if the point is outside the Upper or Lower Limit
+                const index = context.dataIndex;
+                const value = chartData[index].value;
+                const limitUp = chartData[index].limit_up;
+                const limitDown = chartData[index].limit_down;
 
-
-
-
-
-    var canvas = document.getElementById('myChart');
-
-
-    canvas.height = 300;
-
-    const minY = {{minY}} - 10
-    const maxY = {{maxY}} + 10
-    // const minY = Math.min(...chartData.values, ...limitData.up, ...limitData.down) - 10;
-    // const maxY = Math.max(...chartData.values, ...limitData.up, ...limitData.down) + 10;
-    // 차트 생성
-
-    var ctx = document.getElementById('myChart').getContext('2d');
-    var myChart = new Chart(ctx, {
-        type: 'scatter',
-        data: {
-            datasets: [
-            {
-                label: 'Data',
-                data: chartData.map( item => ({y: item.value, x:item.datetime})), 
-                backgroundColor: function(context) {
-                // Check if the point is outside the Upper or Lower Limit
-                    const index = context.dataIndex;
-                    const value = chartData[index].value;
-                    const limitUp = chartData[index].limit_up;
-                    const limitDown = chartData[index].limit_down;
-
-                    if (value > limitUp || value < limitDown) {
-                        return colorRed; // Red color for points outside limits
-                    } else {
-                        return colorData;
-                    }
-                },
-                borderColor: colorBlack,
-                borderWidth: 1,
-                pointRadius: 3,  // 점의 크기를 조절
-                type:'scatter'
+                if (value > limitUp || value < limitDown) {
+                    return colorRed; // Red color for points outside limits
+                } else {
+                    return colorData;
+                }
             },
-            {
-                label: 'Upper Limit',
-                data: chartData.map( item => ({y: item.limit_up, x:item.datetime})), 
-                borderColor: legends[1].color,
-                borderWidth: 1,
-                fill: false,
-                type: 'line',  // Line 데이터 타입 설정
-                pointRadius: 0
-            },
-            {
-                label: 'Lower Limit',
-                data: chartData.map( item => ({y: item.limit_down, x:item.datetime})), 
-                borderColor: legends[2].color,
-                borderWidth: 1,
-                fill: false,
-                type: 'line',
-                pointRadius: 0
-            }
-        ]
+            borderColor: colorBlack,
+            borderWidth: 1,
+            pointRadius: 3,  // 점의 크기를 조절
+            type:'scatter'
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
+        {
+            label: 'Upper Limit',
+            data: chartData.map( item => ({y: item.limit_up, x:item.datetime})), 
+            borderColor: legends[1].color,
+            borderWidth: 1,
+            fill: false,
+            type: 'line',  // Line 데이터 타입 설정
+            pointRadius: 0
+        },
+        {
+            label: 'Lower Limit',
+            data: chartData.map( item => ({y: item.limit_down, x:item.datetime})), 
+            borderColor: legends[2].color,
+            borderWidth: 1,
+            fill: false,
+            type: 'line',
+            pointRadius: 0
+        }
+    ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
 
-            animation: {
-            duration: 0, // Set duration to 0 to disable animations
-            },  
-            scales: {
-                x: {
-                    type: 'time',
-                    time: {
-                        unit: 'month',
-                        parser: 'yyyy-MM-dd',
-                        },
-                    position: 'bottom',
-                    stepSize: 2,
-                    
-                },
-                y: {
-                    beginAtZero: false,
-                    min: minY,
-                    max: maxY,
-                    
-                },
+        animation: {
+        duration: 0, // Set duration to 0 to disable animations
+        },  
+        scales: {
+            x: {
+                type: 'time',
+                time: {
+                    unit: 'month',
+                    parser: 'yyyy-MM-dd',
+                    },
+                position: 'bottom',
+                stepSize: 2,
                 
             },
-            plugins: {            
-                legend: {
-                display: true,
-                    labels: {
-                        fontcolor: 'rgb(255, 99, 132)',
-                        fontsize: 22,
-                        generateLabels: function (chart) {
-                            return legends.map(function (color, index) {
-                                return {
-                                    text: legends[index].label,
-                                    fillStyle: legends[index].color,
-                                    strokeStyle:'rgba(0, 0, 0, 1)',
-                                };
-                            });
-                        }
+            y: {
+                beginAtZero: false,
+                min: minY,
+                max: maxY,
+                
+            },
+            
+        },
+        plugins: {            
+            legend: {
+            display: true,
+                labels: {
+                    fontcolor: 'rgb(255, 99, 132)',
+                    fontsize: 22,
+                    generateLabels: function (chart) {
+                        return legends.map(function (color, index) {
+                            return {
+                                text: legends[index].label,
+                                fillStyle: legends[index].color,
+                                strokeStyle:'rgba(0, 0, 0, 1)',
+                            };
+                        });
                     }
-                },
+                }
+            },
+        },
+
+
+
+        onClick: function (event, elements) {
+                if (elements.length > 0) {
+                    // Get the clicked dataset index and data index
+                    var datasetIndex = elements[0].datasetIndex;
+                    var dataIndex = elements[0].index;
+
+                    // Access the clicked data point
+                    var clickedData = chartData[dataIndex];
+                    console.log('Clicked Data:', clickedData);
+
+                    updateClickedDataTable(clickedData);
             }
-        }
-    });
+        },
+
+
+    }
+});
+
+
+
+
+function updateClickedDataTable(clickedData) {
+    var table = document.getElementById('clickedDataTable');
+    
+    // Clear existing rows
+    while (table.rows.length > 1) {
+        table.deleteRow(1);
+    }
+
+    // Add a new row for each property
+    addRow(table, 'Date', clickedData.datetime);
+    addRow(table, 'Value', clickedData.value);
+    addRow(table, 'Limit Up', clickedData.limit_up);
+    addRow(table, 'Limit Down', clickedData.limit_down);
+}
+
+function addRow(table, label, value) {
+    var newRow = table.insertRow(-1); // -1 appends the row at the end
+
+    // Add cells for label and value
+    var labelCell = newRow.insertCell(0);
+    var valueCell = newRow.insertCell(1);
+
+    // Set the content of the cells with the clicked data
+    labelCell.textContent = label;
+    valueCell.textContent = value;
+}
 
 </script>
 
