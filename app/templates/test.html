@@ -5,6 +5,19 @@
 {% block title %}Home Page{% endblock %}
 
 {% block content %}
+
+
+<!-- Y axis Max, min value  -->
+<label for="yAxisMin">Y-Axis Min:</label>
+<input type="number" id="yAxisMin">
+
+<label for="yAxisMax">Y-Axis Max:</label>
+<input type="number" id="yAxisMax">
+
+<!-- Add a button to apply changes -->
+<button onclick="updateChart()">Apply Changes</button>
+
+
 <div>
     <canvas id="myChart"></canvas>
 </div>
@@ -80,10 +93,14 @@ canvas.height = 300;
 
 const minY = {{minY}} - 10
 const maxY = {{maxY}} + 10
-// const minY = Math.min(...chartData.values, ...limitData.up, ...limitData.down) - 10;
-// const maxY = Math.max(...chartData.values, ...limitData.up, ...limitData.down) + 10;
-// 차트 생성
 
+
+// for Y axis Min, min value 
+document.getElementById('yAxisMin').value = Number(minY);
+document.getElementById('yAxisMax').value = Number(maxY);
+
+
+// 차트 생성
 var ctx = document.getElementById('myChart').getContext('2d');
 var myChart = new Chart(ctx, {
     type: 'scatter',
@@ -187,6 +204,14 @@ var myChart = new Chart(ctx, {
                     var clickedData = chartData[dataIndex];
                     console.log('Clicked Data:', clickedData);
 
+                    // Update the URL without triggering a page refresh
+                    var newUrl = window.location.protocol + '//' + window.location.host + window.location.pathname +
+                                '?datasetIndex=' + datasetIndex + '&lot=' + clickedData.lot;
+
+                    // Push the new URL to the browser's history
+                    history.pushState({ datasetIndex: datasetIndex, dataIndex: dataIndex }, '', newUrl);
+
+
                     updateClickedDataTable(clickedData);
             }
         },
@@ -224,6 +249,22 @@ function addRow(table, label, value) {
     labelCell.textContent = label;
     valueCell.textContent = value;
 }
+
+
+
+function updateChart() {
+    const yAxisMin = document.getElementById('yAxisMin').value;
+    const yAxisMax = document.getElementById('yAxisMax').value;
+
+    // Update chart options
+    myChart.options.scales.y.min = Number(yAxisMin);
+    myChart.options.scales.y.max = Number(yAxisMax);
+
+    
+    // Update the chart
+    myChart.update();
+}
+
 
 </script>
 

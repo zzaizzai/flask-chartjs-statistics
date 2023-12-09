@@ -86,10 +86,10 @@ class DataControl():
                 writer = csv.writer(file)
 
                 # Write headers
-                headers = ["datetime", "value", "limit_up", "limit_down"]
+                headers = ["lot", "datetime", "value", "limit_up", "limit_down"]
                 writer.writerow(headers)
 
                 # Write data and limits to the CSV file
-                for datetime_str, value, limit_up, limit_down in zip(data['labels'], data['values'], limit['up'], limit['down']):
-                    writer.writerow([datetime_str, value, limit_up, limit_down])
+                for lot_str, datetime_str, value, limit_up, limit_down in zip(data['lot_list'], data['date_list'], data['values'], limit['up'], limit['down']):
+                    writer.writerow([lot_str, datetime_str, value, limit_up, limit_down])
         return 
