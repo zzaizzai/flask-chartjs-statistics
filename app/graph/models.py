@@ -10,7 +10,7 @@ class AnalysisData():
     def __init__(self, chart_data: List[Dict[str, Any]]):
         self.chart_data  = chart_data
         
-    def create_analysis_data(self) -> Dict[str, Any]:
+    def calculate_analysis_data(self) -> Dict[str, Any]:
         
         keys =  list(self.chart_data[0].keys())
 

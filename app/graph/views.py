@@ -25,7 +25,7 @@ def test():
     minY, maxY = get_minY_maxY(chart_data, ["value", 'limit_up', 'limit_down'])
 
     ad  = AnalysisData(chart_data=chart_data)
-    analysis_data =  ad.create_analysis_data()
+    analysis_data =  ad.calculate_analysis_data()
     context = {
         'chart_data': chart_data_json,
         'maxY': maxY,

@@ -3,7 +3,7 @@
 ## how to install
 ```
 clone https://github.com/zzaizzai/flaskmysql-worksystem.git
-cd flaskmysql-worksystem
+cd flask-chartjs-statistics
 
 python -m venv venv
 cd .venv/Scripts

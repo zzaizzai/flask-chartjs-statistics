@@ -232,10 +232,11 @@ function updateClickedDataTable(clickedData) {
     }
 
     // Add a new row for each property
-    addRow(table, 'Date', clickedData.datetime);
-    addRow(table, 'Value', clickedData.value);
-    addRow(table, 'Limit Up', clickedData.limit_up);
-    addRow(table, 'Limit Down', clickedData.limit_down);
+    addRow(table, 'lot', clickedData.lot || 'error');
+    addRow(table, 'Date', clickedData.datetime || 'error');
+    addRow(table, 'Value', clickedData.value) || 'error';
+    addRow(table, 'Limit Up', clickedData.limit_up || 'error');
+    addRow(table, 'Limit Down', clickedData.limit_down || 'error');
 }
 
 function addRow(table, label, value) {
@@ -266,6 +267,32 @@ function updateChart() {
 }
 
 
+function getLotFromURL() {
+  var urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('lot');
+}
+
+
+// Function to check for the 'lot' parameter in the URL and update the table
+function checkForLotAndUpdateTable() {
+  var lot = getLotFromURL();
+
+  if (lot) {
+    // Replace this with your actual data retrieval logic
+    // ....ajax??
+    var clickedData = {
+      datetime: '2023-12-10',
+      value: 42,
+      limit_up: 50,
+      limit_down: 30
+    };
+
+    updateClickedDataTable(clickedData);
+  }
+}
+
+// Add an event listener for the 'DOMContentLoaded' event
+document.addEventListener('DOMContentLoaded', checkForLotAndUpdateTable);
 </script>
 
 {% endblock %}
