@@ -6,6 +6,11 @@
 
 {% block content %}
 
+<h3>part_no : {{part_no}}</h3>
+
+<form action="/api/graph/create/parts" method="post">
+    <button type="submit">create random data</button>
+</form>
 
 <!-- Y axis Max, min value  -->
 <label for="yAxisMin">Y-Axis Min:</label>
@@ -194,7 +199,7 @@ var myChart = new Chart(ctx, {
 
 
 
-        onClick: function (event, elements) {
+            onClick: function (event, elements) {
                 if (elements.length > 0) {
                     // Get the clicked dataset index and data index
                     var datasetIndex = elements[0].datasetIndex;
@@ -204,17 +209,18 @@ var myChart = new Chart(ctx, {
                     var clickedData = chartData[dataIndex];
                     console.log('Clicked Data:', clickedData);
 
+                    // Parse the existing URL
+                    var url = new URL(window.location.href);
+
                     // Update the URL without triggering a page refresh
-                    var newUrl = window.location.protocol + '//' + window.location.host + window.location.pathname +
-                                '?datasetIndex=' + datasetIndex + '&lot=' + clickedData.lot;
+                    url.searchParams.set('lot', clickedData.lot);
 
                     // Push the new URL to the browser's history
-                    history.pushState({ datasetIndex: datasetIndex, dataIndex: dataIndex }, '', newUrl);
-
+                    history.pushState({ datasetIndex: datasetIndex, dataIndex: dataIndex }, '', url.href);
 
                     updateClickedDataTable(clickedData);
+                }
             }
-        },
 
 
     }
@@ -234,9 +240,9 @@ function updateClickedDataTable(clickedData) {
     // Add a new row for each property
     addRow(table, 'lot', clickedData.lot || 'error');
     addRow(table, 'Date', clickedData.datetime || 'error');
-    addRow(table, 'Value', clickedData.value) || 'error';
-    addRow(table, 'Limit Up', clickedData.limit_up || 'error');
-    addRow(table, 'Limit Down', clickedData.limit_down || 'error');
+    addRow(table, 'Value', clickedData.value);
+    addRow(table, 'Limit Up', clickedData.limit_up );
+    addRow(table, 'Limit Down', clickedData.limit_down);
 }
 
 function addRow(table, label, value) {
@@ -275,20 +281,33 @@ function getLotFromURL() {
 
 // Function to check for the 'lot' parameter in the URL and update the table
 function checkForLotAndUpdateTable() {
-  var lot = getLotFromURL();
+    var lot = getLotFromURL();
 
-  if (lot) {
-    // Replace this with your actual data retrieval logic
-    // ....ajax??
-    var clickedData = {
-      datetime: '2023-12-10',
-      value: 42,
-      limit_up: 50,
-      limit_down: 30
-    };
+    if (lot) {
+        // Replace this with your actual data retrieval logic
+        // ....ajax??
 
-    updateClickedDataTable(clickedData);
-  }
+        // Find the data corresponding to the lot in chartData
+        var clickedData = findDataForLot(chartData, lot);
+
+        // If data for the lot is found, update the table
+        if (clickedData) {
+            console.log(clickedData)
+            updateClickedDataTable(clickedData);
+        } else {
+            console.error('Data for lot not found');
+        }
+    }
+}
+
+function findDataForLot(chartData, lot) {
+    // Assuming 'lot' is a property in your chartData objects
+    for (var i = 0; i < chartData.length; i++) {
+        if (chartData[i].lot === lot) {
+            return chartData[i];
+        }
+    }
+    return null; // Return null if the lot is not found
 }
 
 // Add an event listener for the 'DOMContentLoaded' event
