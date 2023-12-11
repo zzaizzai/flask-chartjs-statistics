@@ -1,0 +1,64 @@
+
+<!-- index.html -->
+{% extends 'layout.html' %}
+
+{% block title %}Home Page{% endblock %}
+
+{% block content %}
+
+<style>
+    #partColors {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .partItem {
+        margin-bottom: 10px;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+</style>
+
+
+<div id="partColors">
+    {% for part_no in part_no_list %}
+        <a href="{{ url_for('graph.test', part_no=part_no) }}"><div class="partItem" data-part-no="{{ part_no }}">{{ part_no }}</div></a>
+    {% endfor %}
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Iterate through each part_no div and make AJAX request for color
+    $('.partItem').each(function() {
+        var partNo = $(this).data('part-no');
+        var url = '/api/graph/get/part_color?part_no=' + encodeURIComponent(partNo);
+
+        // Use a closure to capture the value of currentDiv
+        var currentDiv = $(this);
+        // Make AJAX request
+        $.ajax({
+            url: url,
+            type: 'GET',
+            success: function(response) {
+                
+                // Update the corresponding part_no div with the color
+                var newText = currentDiv.text() + ' Color: ' + response.color;
+
+                // Update the corresponding part_no div with the new text
+                currentDiv.text(newText).css('color', response.color);
+            }.bind(this),  // bind 'this' to maintain the correct context
+            error: function(error) {
+                console.error('Error fetching color for part_no: ' + partNo, error);
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}

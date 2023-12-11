@@ -33,6 +33,56 @@ class AnalysisData():
         
         return average_value
     
+    
+class PartNo():
+    
+    def __init__(self, part_no: str):
+        self.part_no = part_no
+        
+        self.data_control = DataControl('data1')
+    
+    def get_color(self):
+        part_no_data = self.data_control.get_data_with_part_no(self.part_no)
+        
+        num_error = 0
+        for data_part in part_no_data:
+            
+            if data_part['value'] > data_part['limit_up']:
+                num_error += 1
+            
+            if data_part['value'] < data_part['limit_down']:
+                num_error += 1
+                
+        
+        if num_error > (len(part_no_data)/100):
+            return 'red'
+        
+        if num_error > (len(part_no_data)/500):
+            return 'orange'
+        
+
+        return 'blue'
+
+class PartData():
+    
+    def __init__(self, **kwrrg):
+        self.datetime = kwrrg['datetime']
+        self.lot = kwrrg['lot']
+        self.limit_down = kwrrg['limit_down']
+        self.limit_up = kwrrg['limit_up']
+        self.part_no = kwrrg['part_no']
+        self.value = kwrrg['value']
+        
+    def to_dict(self):
+        return {
+            'datetime': self.datetime,
+            'lot': self.lot,
+            'limit_down': self.limit_down,
+            'limit_up': self.limit_up,
+            'part_no': self.part_no,
+            'value': self.value
+        }
+        
 class DataControl():
     
     
@@ -50,7 +100,22 @@ class DataControl():
             writer = csv.writer(file)
             writer.writerow(header)
             
-    def read_data(self, part_no: str) -> List[str]:
+    def get_all_unique_part_no(self) -> List[str]:
+        # You may optionally read the content you just wrote
+        with open(self.file_path, "r") as f:
+            csv_reader = csv.DictReader(f)
+
+            # Use a set to store unique part_no values
+            unique_part_nos = set()
+
+            for row in csv_reader:
+                part_no_value = row.get('part_no')
+                if part_no_value not in unique_part_nos:
+                    unique_part_nos.add(part_no_value)
+
+        return list(unique_part_nos)
+            
+    def get_data_with_part_no(self, part_no: str) -> List[str]:
         
         # You may optionally read the content you just wrote
         with open(self.file_path, "r") as f:

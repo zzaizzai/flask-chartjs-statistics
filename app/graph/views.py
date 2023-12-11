@@ -14,6 +14,19 @@ def tasks_page():
 
     return "graph page"
 
+
+@graph_bp.route('/tests')
+def tests():
+    dc = DataControl('data1')
+    part_no_list = dc.get_all_unique_part_no()
+    
+    context = {}
+    context['part_no_list'] = part_no_list
+    
+    return render_template('part_list.html', **context)
+
+
+
 @graph_bp.route('/test')
 def test():
     
@@ -26,7 +39,7 @@ def test():
     if part_no is None:
         part_no = 'A10'
 
-    chart_data  = dc.read_data(part_no=part_no)
+    chart_data  = dc.get_data_with_part_no(part_no=part_no)
     
     if len(chart_data) == 0 :
         return render_template('test.html')
