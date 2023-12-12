@@ -4,7 +4,7 @@ import numpy as np
 import json
 import pandas as pd
 from datetime import datetime, timedelta
-from .random_data import create_random_test_data, get_minY_maxY
+from .random_data import get_minY_maxY
 from .models import AnalysisData, DataControl
 
 
@@ -17,11 +17,17 @@ def tasks_page():
 
 @graph_bp.route('/tests')
 def tests():
+    date_start = request.args.get('date_start', default='2022-01-01', type=str)
+    date_end = request.args.get('date_end', default='2022-12-31', type=str)
+    
+    
     dc = DataControl('data1')
     part_no_list = dc.get_all_unique_part_no()
     
     context = {}
     context['part_no_list'] = part_no_list
+    context['date_start'] = date_start
+    context['date_end'] = date_end
     
     return render_template('part_list.html', **context)
 
@@ -40,7 +46,8 @@ def test():
         part_no = 'A10'
 
     chart_data  = dc.get_data_with_part_no(part_no=part_no)
-    
+
+
     if len(chart_data) == 0 :
         return render_template('test.html')
     # convert to json

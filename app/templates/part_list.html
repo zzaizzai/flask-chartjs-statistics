@@ -6,6 +6,22 @@
 
 {% block content %}
 
+
+<form>
+    <div class="form-group">
+        <label for="date_start">Start Date:</label>
+        <input type="date" class="form-control" id="date_start" name="date_start" value="{{date_start}}">
+    </div>
+
+    <div class="form-group">
+        <label for="date_end">End Date:</label>
+        <input type="date" class="form-control" id="date_end" name="date_end" value="{{date_end}}">
+    </div>
+
+    <button action="/graph/tests" type="submit" method ="post" id="submit_button">Submit</button>
+</form>
+
+
 <style>
     #partColors {
         display: flex;
@@ -25,19 +41,25 @@
 
 <div id="partColors">
     {% for part_no in part_no_list %}
-        <a href="{{ url_for('graph.test', part_no=part_no) }}"><div class="partItem" data-part-no="{{ part_no }}">{{ part_no }}</div></a>
+        <a href="{{ url_for('graph.test', part_no=part_no) }}"><div class="partItem" data-part-no="{{ part_no }}">Part No: {{ part_no }}</div></a>
     {% endfor %}
 </div>
 
 
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 
+
 <script>
+
+var date_start = "{{date_start|safe}}";
+var date_end = "{{date_end|safe}}";
+
+
 $(document).ready(function() {
     // Iterate through each part_no div and make AJAX request for color
     $('.partItem').each(function() {
         var partNo = $(this).data('part-no');
-        var url = '/api/graph/get/part_color?part_no=' + encodeURIComponent(partNo);
+        var url = '/api/graph/get/part_color?part_no=' + encodeURIComponent(partNo) + '&date_start=' + date_start+ '&date_end=' + date_end;
 
         // Use a closure to capture the value of currentDiv
         var currentDiv = $(this);
@@ -46,12 +68,8 @@ $(document).ready(function() {
             url: url,
             type: 'GET',
             success: function(response) {
-                
-                // Update the corresponding part_no div with the color
-                var newText = currentDiv.text() + ' Color: ' + response.color;
-
                 // Update the corresponding part_no div with the new text
-                currentDiv.text(newText).css('color', response.color);
+                currentDiv.css('color', response.color);
             }.bind(this),  // bind 'this' to maintain the correct context
             error: function(error) {
                 console.error('Error fetching color for part_no: ' + partNo, error);

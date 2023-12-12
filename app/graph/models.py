@@ -1,9 +1,13 @@
-from flask import Flask, current_app
-import os
-from typing import Tuple, Dict, Any, List, Optional
 import csv
 import json
+import os
+from datetime import datetime
+from typing import Tuple, Dict, Any, List, Optional
 
+from flask import Flask, current_app
+
+import numpy as np
+import pandas as pd
 
 class AnalysisData():
     
@@ -36,24 +40,36 @@ class AnalysisData():
     
 class PartNo():
     
-    def __init__(self, part_no: str):
+    def __init__(self, part_no: str, date_start = None, date_end = None):
         self.part_no = part_no
         
         self.data_control = DataControl('data1')
-    
-    def get_color(self):
+        self.date_start = date_start if date_start is not None else '2022-01-01'
+        self.date_start = date_end if date_end is not None else '2022-12-31'
+        
+        
+    def get_color(self, date_start = None, date_end = None):
         part_no_data = self.data_control.get_data_with_part_no(self.part_no)
         
-        num_error = 0
-        for data_part in part_no_data:
-            
-            if data_part['value'] > data_part['limit_up']:
-                num_error += 1
-            
-            if data_part['value'] < data_part['limit_down']:
-                num_error += 1
-                
+        date_start = datetime.strptime(date_start, "%Y-%m-%d") if date_start else datetime(2022, 1, 1)
+        date_end = datetime.strptime(date_end, "%Y-%m-%d") if date_end else datetime(2022, 12, 31)
         
+        num_items = 0
+        num_error = 0
+        
+        for data_part in part_no_data:
+            data_date = datetime.strptime(data_part['datetime'], "%Y-%m-%d")  # 데이터의 날짜를 datetime 객체로 변환
+            if (not date_start or data_date >= date_start) and (not date_end or data_date <= date_end):
+                num_items += 1
+                if data_part['value'] > data_part['limit_up']:
+                    num_error += 1
+                
+                if data_part['value'] < data_part['limit_down']:
+                    num_error += 1
+                
+        if num_items == 0:
+            return 'gray'
+
         if num_error > (len(part_no_data)/100):
             return 'red'
         
@@ -86,11 +102,13 @@ class PartData():
 class DataControl():
     
     
-    def __init__(self, data_name: str):
+    def __init__(self, data_name: str, date_start = None, date_end = None):
         
         self.data_name = data_name
         self.save_dir = current_app.config["SAVE_DIR"]
         self.file_path = os.path.join(self.save_dir, f"{data_name}.csv")
+        self.date_start = date_start if date_start is not None else '2022-01-01'
+        self.date_start = date_end if date_end is not None else '2022-12-31'
         
     def delete_data_except_header(self) -> None:
 
@@ -101,6 +119,9 @@ class DataControl():
             writer.writerow(header)
             
     def get_all_unique_part_no(self) -> List[str]:
+        
+        if not os.path.exists(self.file_path):
+            return []
         # You may optionally read the content you just wrote
         with open(self.file_path, "r") as f:
             csv_reader = csv.DictReader(f)
@@ -116,7 +137,11 @@ class DataControl():
         return list(unique_part_nos)
             
     def get_data_with_part_no(self, part_no: str) -> List[str]:
-        
+
+        # file check
+        if not os.path.exists(self.file_path):
+            self.create_random_test_data()
+            
         # You may optionally read the content you just wrote
         with open(self.file_path, "r") as f:
             csv_reader = csv.DictReader(f)
@@ -153,3 +178,54 @@ class DataControl():
                 for lot_str, datetime_str, value, limit_up, limit_down, part_no in zip(data['lot_list'], data['date_list'], data['values'], limit['up'], limit['down'], data['part_no_list']):
                     writer.writerow([lot_str, datetime_str, value, limit_up, limit_down, part_no])
         return 
+
+
+
+    def create_random_test_data(self) -> None:
+        
+        
+        #  data1.csv
+        self.delete_data_except_header()
+        
+        def generate_lot_from_date(date) -> str:
+            date_str = date.replace('-', '').replace('_', '')
+            lot = f'{date_str}01'
+            return lot
+        
+        for index in range(10, 20):
+            # year of 2022 
+            start_date = datetime(2022, 1, 1)
+            end_date = datetime(2022, 12, 31)
+            date_range = pd.date_range(start_date, end_date, freq='D')  
+
+
+            date_list = [date.strftime('%Y-%m-%d') for date in date_range]
+
+            lot_list = [generate_lot_from_date(date) for date in date_list]
+
+            
+            num_values = len(date_list)
+
+            num_median = 30
+            values = [num_median]*num_values
+            part_no_list = [f'A{index}']*num_values
+            
+            
+            for _ in range(10):
+                num_random = np.sqrt(np.random.randint(1, 100))
+                values = [ (value + np.random.randint(-num_random, num_random)) for value in values]
+            
+            limit = {}
+            limit["up"] = [60]*num_values
+            limit["down"] = [0]*num_values
+            
+            data = {
+            'lot_list': lot_list,
+            'date_list': date_list,
+            'values': values,
+            'part_no_list': part_no_list
+            }
+            
+
+            self.save_data(data, limit)
+    

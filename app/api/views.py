@@ -3,9 +3,9 @@ from . import api_bp
 import numpy as np
 import json
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from app.graph.models import DataControl, PartData, PartNo
-from app.graph.random_data import create_random_test_data
+
 
 @api_bp.route('/')
 def tasks_page():
@@ -22,7 +22,8 @@ def test():
 @api_bp.route('/graph/create/parts', methods=['POST'])
 def create_parts():
     
-    create_random_test_data()
+    dc = DataControl('data1')
+    dc.create_random_test_data()
     
     return redirect(request.referrer)
 
@@ -38,11 +39,13 @@ def get_part():
 
 @api_bp.route('/graph/get/part_color', methods=['GET'])
 def get_part_color():
+    
     part_no = request.args.get('part_no', default=None, type=str)
-    
-    
+    date_start = request.args.get('date_start', default=None, type=str)
+    date_end = request.args.get('date_end', default=None, type=str)
+
     pn = PartNo(part_no)
-    color = pn.get_color()
+    color = pn.get_color(date_start, date_end)
     
     data = { 'color' : color }
     
