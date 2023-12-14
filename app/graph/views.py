@@ -6,7 +6,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from .random_data import get_minY_maxY
 from .models import AnalysisData, DataControl
-
+from dateutil.relativedelta import relativedelta
 
 
 @graph_bp.route('/')
@@ -17,8 +17,22 @@ def tasks_page():
 
 @graph_bp.route('/tests')
 def tests():
-    date_start = request.args.get('date_start', default='2022-01-01', type=str)
-    date_end = request.args.get('date_end', default='2022-12-31', type=str)
+    span = request.args.get('span', default=None, type=str)   
+
+    date_start = request.args.get('date_start', default=None, type=str)
+    date_end = request.args.get('date_end', default=None, type=str)
+    
+    if span is None:
+        if date_start is None or date_end is None:
+            span = "12m"
+    
+    # Check span
+    if span is not None:
+        span_value = int(span[:-1])
+        if span[-1] == 'm':
+            today = datetime.today()
+            date_start = (today - relativedelta(months=span_value)).strftime("%Y-%m-%d")
+            date_end = today.strftime("%Y-%m-%d")
     
     
     dc = DataControl('data1')

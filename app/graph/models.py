@@ -1,7 +1,7 @@
 import csv
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Tuple, Dict, Any, List, Optional
 
 from flask import Flask, current_app
@@ -194,8 +194,9 @@ class DataControl():
         
         for index in range(10, 20):
             # year of 2022 
-            start_date = datetime(2022, 1, 1)
-            end_date = datetime(2022, 12, 31)
+            today = datetime.today()
+            start_date = today - timedelta(days= 365)
+            end_date = today
             date_range = pd.date_range(start_date, end_date, freq='D')  
 
 

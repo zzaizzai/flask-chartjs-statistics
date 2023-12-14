@@ -7,6 +7,14 @@
 {% block content %}
 
 
+<div class="horizontal">
+    <h3 class="mr-3">Span:</h3>
+    <a class="button" href="/graph/tests?span=1m">last 1 months</a>
+    <a class="button" href="/graph/tests?span=3m">last 3 months</a>
+    <a class="button" href="/graph/tests?span=6m">last 6 months</a>
+    <a class="button" href="/graph/tests?span=12m">last 1 year</a>
+</div>
+
 <form>
     <div class="form-group">
         <label for="date_start">Start Date:</label>
@@ -20,6 +28,8 @@
 
     <button action="/graph/tests" type="submit" method ="post" id="submit_button">Submit</button>
 </form>
+
+
 
 
 <style>

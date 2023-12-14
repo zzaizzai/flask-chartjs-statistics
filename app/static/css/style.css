@@ -21,3 +21,70 @@ th, td {
 th {
     background-color: #f2f2f2;
 }
+
+
+.menu-button {
+    display: inline-block;
+    padding: 5px 10px;
+    font-size: 15px;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 8px;
+    background-color: #db3f34;
+    color: #ffffff;
+    border: 2px solid #000000;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+    margin-bottom: 5px;
+}
+
+.button {
+    display: inline-block;
+    padding: 5px 10px;
+    font-size: 15px;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 8px;
+    background-color: #3498db;
+    color: #ffffff;
+    border: 2px solid #000000;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+    margin-left: 3px;
+    margin-right: 3px;
+}
+
+.button:hover {
+    background-color: #2980b9;
+    color: #ffffff;
+}
+
+.mb-3 {
+    margin-bottom: 3px;
+}
+.mb-5 {
+    margin-bottom: 5px;
+}
+
+.mr-3 {
+    margin-right: 3px;
+}
+.mr-5 {
+    margin-right: 5px;
+}
+
+.vertical {
+    display: flex;
+    flex-direction: column; 
+    align-items: flex-start; 
+    justify-content: center;
+}
+
+.horizontal {
+    display: flex;
+    flex-direction: row; 
+    justify-content: flex-start; 
+    align-items: center; 
+}
