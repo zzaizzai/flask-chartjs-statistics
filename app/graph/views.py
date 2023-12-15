@@ -1,11 +1,12 @@
-from flask import render_template, current_app, request
-from . import graph_bp 
-import numpy as np
 import json
-import pandas as pd
 from datetime import datetime, timedelta
+
+from flask import render_template, current_app, request
+
+from . import graph_bp 
 from .random_data import get_minY_maxY
 from .models import AnalysisData, DataControl
+
 from dateutil.relativedelta import relativedelta
 
 
@@ -15,8 +16,8 @@ def tasks_page():
     return "graph page"
 
 
-@graph_bp.route('/tests')
-def tests():
+@graph_bp.route('/show_parts')
+def show_parts():
     span = request.args.get('span', default=None, type=str)   
 
     date_start = request.args.get('date_start', default=None, type=str)
@@ -47,10 +48,14 @@ def tests():
 
 
 
-@graph_bp.route('/test')
-def test():
+@graph_bp.route('/show_part_detail')
+def show_part_detail():
     
-    dc = DataControl('data1')
+    date_start = request.args.get('date_start', default=None, type=str)
+    date_end = request.args.get('date_end', default=None, type=str)
+    
+    dc = DataControl('data1', date_start=date_start, date_end=date_end)
+    
     
     display_min = request.args.get('min', default=None, type=int)
     display_max = request.args.get('max', default=None, type=int)
@@ -72,6 +77,8 @@ def test():
     ad  = AnalysisData(chart_data=chart_data)
     analysis_data =  ad.calculate_analysis_data()
     context = {
+        'date_start' : date_start,
+        'date_end' : date_end,
         'part_no' : part_no,
         'chart_data': chart_data_json,
         'maxY': maxY,

@@ -107,8 +107,8 @@ class DataControl():
         self.data_name = data_name
         self.save_dir = current_app.config["SAVE_DIR"]
         self.file_path = os.path.join(self.save_dir, f"{data_name}.csv")
-        self.date_start = date_start if date_start is not None else '2022-01-01'
-        self.date_start = date_end if date_end is not None else '2022-12-31'
+        self.date_start = date_start 
+        self.date_end = date_end 
         
     def delete_data_except_header(self) -> None:
 
@@ -151,6 +151,7 @@ class DataControl():
                 'limit_up': float,  
                 'limit_down': float,  
                 'part_no': str,  
+                'datetime': str, 
                 # Add more columns as needed
             }
 
@@ -159,12 +160,23 @@ class DataControl():
             for row in csv_reader:
                 # Check if the part_no column matches the desired value
                 if row.get('part_no') == part_no:
-                    converted_row = {}
-                    for column, value in row.items():
-                        # Perform type conversion based on the defined types
-                        column_type = column_types.get(column, str)
-                        converted_row[column] = column_type(value)
-                    data_list.append(converted_row)
+                    # Check if a date filter is provided
+                    if self.date_start and self.date_end:
+                        row_date = row.get('datetime')  # Assuming 'date' is the name of the date column
+                        if self.date_start <= row_date <= self.date_end:
+                            converted_row = {}
+                            for column, value in row.items():
+                                # Perform type conversion based on the defined types
+                                column_type = column_types.get(column, str)
+                                converted_row[column] = column_type(value)
+                            data_list.append(converted_row)
+                    else:
+                        converted_row = {}
+                        for column, value in row.items():
+                            # Perform type conversion based on the defined types
+                            column_type = column_types.get(column, str)
+                            converted_row[column] = column_type(value)
+                        data_list.append(converted_row)
 
         return data_list
     

@@ -9,24 +9,27 @@
 
 <div class="horizontal">
     <h3 class="mr-3">Span:</h3>
-    <a class="button" href="/graph/tests?span=1m">last 1 months</a>
-    <a class="button" href="/graph/tests?span=3m">last 3 months</a>
-    <a class="button" href="/graph/tests?span=6m">last 6 months</a>
-    <a class="button" href="/graph/tests?span=12m">last 1 year</a>
+    <a class="button" href="{{ url_for('graph.show_parts', span='1m') }}">last 1 month</a>
+    <a class="button" href="{{ url_for('graph.show_parts', span='3m') }}">last 3 months</a>
+    <a class="button" href="{{ url_for('graph.show_parts', span='6m') }}">last 6 months</a>
+    <a class="button" href="{{ url_for('graph.show_parts', span='12m') }}">last 1 year</a>
 </div>
 
-<form>
-    <div class="form-group">
-        <label for="date_start">Start Date:</label>
-        <input type="date" class="form-control" id="date_start" name="date_start" value="{{date_start}}">
+<form action="{{ url_for('graph.show_parts') }}" method="get">
+    <div class="horizontal">
+        <strong class="mr-3">Span:</strong>
+        <div class="form-group mr-3">
+            <label for="date_start"></label>
+            <input type="date" class="form-control" id="date_start" name="date_start" value="{{ date_start }}">
+        </div>
+        <div class="mr-3">-</div>
+        <div class="form-group mr-3">
+            <label for="date_end"></label>
+            <input type="date" class="form-control" id="date_end" name="date_end" value="{{ date_end }}">
+        </div>
+    
+        <button type="submit" class="btn btn-primary" id="submit_button">Submit</button>
     </div>
-
-    <div class="form-group">
-        <label for="date_end">End Date:</label>
-        <input type="date" class="form-control" id="date_end" name="date_end" value="{{date_end}}">
-    </div>
-
-    <button action="/graph/tests" type="submit" method ="post" id="submit_button">Submit</button>
 </form>
 
 
@@ -51,7 +54,7 @@
 
 <div id="partColors">
     {% for part_no in part_no_list %}
-        <a href="{{ url_for('graph.test', part_no=part_no) }}"><div class="partItem" data-part-no="{{ part_no }}">Part No: {{ part_no }}</div></a>
+        <a href="{{ url_for('graph.show_part_detail', part_no=part_no, date_start=date_start, date_end=date_end) }}"><div class="partItem" data-part-no="{{ part_no }}">Part No: {{ part_no }}</div></a>
     {% endfor %}
 </div>
 

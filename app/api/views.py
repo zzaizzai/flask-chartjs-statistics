@@ -1,10 +1,13 @@
-from flask import render_template, current_app, jsonify, request, redirect
-from . import api_bp 
-import numpy as np
 import json
-import pandas as pd
 from datetime import datetime, timedelta, date
+
+from flask import render_template, current_app, jsonify, request, redirect
+
 from app.graph.models import DataControl, PartData, PartNo
+from . import api_bp 
+
+import numpy as np
+import pandas as pd
 
 
 @api_bp.route('/')
@@ -36,6 +39,7 @@ def get_part():
     data = dc.get_data_with_part_no(part_no) or None
     
     return jsonify(data)
+
 
 @api_bp.route('/graph/get/part_color', methods=['GET'])
 def get_part_color():

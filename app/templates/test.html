@@ -12,6 +12,29 @@
     <button type="submit">create random data</button>
 </form>
 
+
+
+<form action="{{ url_for('graph.show_part_detail') }}" method="get">
+    <div class="horizontal">
+        <strong class="mr-3">Span:</strong>
+        <div class="form-group mr-3">
+            <label for="date_start"></label>
+            <input type="date" class="form-control" id="date_start" name="date_start" value="{{ date_start }}">
+        </div>
+        <div class="mr-3">-</div>
+        <div class="form-group mr-3">
+            <label for="date_end"></label>
+            <input type="date" class="form-control" id="date_end" name="date_end" value="{{ date_end }}">
+        </div>
+    
+        <button type="submit" class="btn btn-primary" id="submit_button">Submit</button>
+    </div>
+</form>
+
+
+
+
+
 <!-- Y axis Max, min value  -->
 <label for="yAxisMin">Y-Axis Min:</label>
 <input type="number" id="yAxisMin">
@@ -216,7 +239,7 @@ var myChart = new Chart(ctx, {
                     url.searchParams.set('lot', clickedData.lot);
 
                     // Push the new URL to the browser's history
-                    history.pushState({ datasetIndex: datasetIndex, dataIndex: dataIndex }, '', url.href);
+                    history.replaceState({ datasetIndex: datasetIndex, dataIndex: dataIndex }, '', url.href);
 
                     updateClickedDataTable(clickedData);
                 }
