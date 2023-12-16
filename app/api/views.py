@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, date
 
 from flask import render_template, current_app, jsonify, request, redirect
 
-from app.graph.models import DataControl, PartData, PartNo
+from app.graph.models import PartNo, PartDataControl
 from . import api_bp 
 
 import numpy as np
@@ -25,7 +25,7 @@ def test():
 @api_bp.route('/graph/create/parts', methods=['POST'])
 def create_parts():
     
-    dc = DataControl('data1')
+    dc = PartDataControl()
     dc.create_random_test_data()
     
     return redirect(request.referrer)
@@ -35,7 +35,7 @@ def get_part():
     part_no = request.args.get('part_no', default=None, type=str)
     print(part_no)
     
-    dc = DataControl('data1')
+    dc = PartDataControl()
     data = dc.get_data_with_part_no(part_no) or None
     
     return jsonify(data)

@@ -5,7 +5,7 @@ from flask import render_template, current_app, request
 
 from . import graph_bp 
 from .random_data import get_minY_maxY
-from .models import AnalysisData, DataControl
+from .models import AnalysisData, PartDataControl
 
 from dateutil.relativedelta import relativedelta
 
@@ -36,7 +36,7 @@ def show_parts():
             date_end = today.strftime("%Y-%m-%d")
     
     
-    dc = DataControl('data1')
+    dc = PartDataControl()
     part_no_list = dc.get_all_unique_part_no()
     
     context = {}
@@ -54,7 +54,7 @@ def show_part_detail():
     date_start = request.args.get('date_start', default=None, type=str)
     date_end = request.args.get('date_end', default=None, type=str)
     
-    dc = DataControl('data1', date_start=date_start, date_end=date_end)
+    dc = PartDataControl()
     
     
     display_min = request.args.get('min', default=None, type=int)
@@ -64,11 +64,16 @@ def show_part_detail():
     if part_no is None:
         part_no = 'A10'
 
+    if date_start is None and date_end is None:
+        today = datetime.today()
+        date_start = (today - relativedelta(months=12)).strftime("%Y-%m-%d")
+        date_end = today.strftime("%Y-%m-%d")
+
     chart_data  = dc.get_data_with_part_no(part_no=part_no)
 
 
     if len(chart_data) == 0 :
-        return render_template('test.html')
+        return render_template('part_detail.html')
     # convert to json
     chart_data_json  = json.dumps(chart_data)
     
@@ -76,6 +81,7 @@ def show_part_detail():
 
     ad  = AnalysisData(chart_data=chart_data)
     analysis_data =  ad.calculate_analysis_data()
+    
     context = {
         'date_start' : date_start,
         'date_end' : date_end,
@@ -88,4 +94,18 @@ def show_part_detail():
         'analysis_data':analysis_data
     }
     
-    return render_template('test.html', **context)
+    return render_template('part_detail.html', **context)
+
+
+@graph_bp.route('/show_product_detail')
+def show_product_detail():
+    
+    context = {}
+    return render_template('product_detail.html', **context)
+
+
+@graph_bp.route('/show_product_list')
+def show_product_list():
+    
+    context = {}
+    return render_template('product_list.html', **context)

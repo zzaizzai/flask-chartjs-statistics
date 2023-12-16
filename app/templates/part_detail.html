@@ -15,6 +15,8 @@
 
 
 <form action="{{ url_for('graph.show_part_detail') }}" method="get">
+    <input type="hidden" name="part_no" value="{{part_no}}">
+
     <div class="horizontal">
         <strong class="mr-3">Span:</strong>
         <div class="form-group mr-3">
@@ -57,12 +59,14 @@
         <th>Key</th>
         <th>Value</th>
     </tr>
-    {% for key, value in analysis_data.items() %}
-        <tr>
-            <td>{{ key }}</td>
-            <td>{{ value }}</td>
-        </tr>
-    {% endfor %}
+    {% if analysis_data %}
+        {% for key, value in analysis_data.items() %}
+            <tr>
+                <td>{{ key }}</td>
+                <td>{{ value }}</td>
+            </tr>
+        {% endfor %}
+    {% endif %}
 </table>
 
 <h4>Clicked Data</h4>
