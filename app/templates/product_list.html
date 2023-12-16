@@ -9,9 +9,16 @@
 
 
 <!-- search bar -->
+
+<form action="/api/graph/create/products" method="post">
+    <button type="submit">create random data of product</button>
+</form>
+
 <div>search bar</div>
 
-
+{% for product_no in product_no_list %}
+<div>{{product_no}}</div>
+{% endfor %}
 <br>
 
 

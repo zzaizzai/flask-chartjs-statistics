@@ -5,7 +5,7 @@ from flask import render_template, current_app, request
 
 from . import graph_bp 
 from .random_data import get_minY_maxY
-from .models import AnalysisData, PartDataControl
+from .models import AnalysisData, PartDataControl, ProductDataControl
 
 from dateutil.relativedelta import relativedelta
 
@@ -37,12 +37,14 @@ def show_parts():
     
     
     dc = PartDataControl()
-    part_no_list = dc.get_all_unique_part_no()
-    
-    context = {}
-    context['part_no_list'] = part_no_list
-    context['date_start'] = date_start
-    context['date_end'] = date_end
+    part_no_list = dc.get_all_unique_no()
+
+    context = {
+        'part_no_list': part_no_list,
+        'date_start': date_start,
+        'date_end' : date_end
+        
+    }
     
     return render_template('part_list.html', **context)
 
@@ -69,7 +71,7 @@ def show_part_detail():
         date_start = (today - relativedelta(months=12)).strftime("%Y-%m-%d")
         date_end = today.strftime("%Y-%m-%d")
 
-    chart_data  = dc.get_data_with_part_no(part_no=part_no)
+    chart_data  = dc.get_data_with_part_no(part_no=part_no, date_start=date_start, date_end=date_end)
 
 
     if len(chart_data) == 0 :
@@ -107,5 +109,10 @@ def show_product_detail():
 @graph_bp.route('/show_product_list')
 def show_product_list():
     
-    context = {}
+    dc = ProductDataControl()
+    product_no_list = dc.get_all_unique_no()
+    
+    context = {
+        'product_no_list': product_no_list
+        }
     return render_template('product_list.html', **context)

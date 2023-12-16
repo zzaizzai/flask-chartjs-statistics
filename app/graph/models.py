@@ -1,6 +1,7 @@
 import csv
 import json
 import os
+import time
 from datetime import datetime, timedelta
 from typing import Tuple, Dict, Any, List, Optional
 from abc import ABC, abstractmethod
@@ -10,7 +11,7 @@ from flask import Flask, current_app
 import numpy as np
 import pandas as pd
 from dateutil.relativedelta import relativedelta
-
+import concurrent.futures
 
 class AnalysisData():
     
@@ -47,13 +48,15 @@ class PartNo():
         self.part_no = part_no
 
         
-    def get_color(self, date_start = None, date_end = None):
+    def get_color(self, date_start: str = None, date_end: str = None):
         part_data_control = PartDataControl()
-        part_no_data = part_data_control.get_data_with_part_no(self.part_no)
         
         today = datetime.today()
-        date_start = datetime.strptime(date_start, "%Y-%m-%d") if date_start  else (today - relativedelta(months=12)).strftime("%Y-%m-%d")
-        date_end = datetime.strptime(date_end, "%Y-%m-%d") if date_end else today.strftime("%Y-%m-%d")
+        date_start = datetime.strptime(date_start, "%Y-%m-%d") if date_start else (today - relativedelta(months=12))
+        date_end = datetime.strptime(date_end, "%Y-%m-%d") if date_end else today
+        
+        
+        part_no_data = part_data_control.get_data_with_part_no(self.part_no, date_start = date_start, date_end = date_end)
         
         num_items = 0
         num_error = 0
@@ -82,13 +85,14 @@ class PartNo():
 
 class PartData():
     
-    def __init__(self, datetime = None, lot: str = None, limit_down: float = None, limit_up: float = None, part_no: str = None, value: float = None):
+    def __init__(self, datetime = None, lot: str = None, limit_down: float = None, limit_up: float = None, part_no: str = None, value: float = None, parent_no: str = None):
         self.datetime = datetime
         self.lot = lot
         self.limit_down = limit_down
         self.limit_up = limit_up
         self.part_no = part_no
         self.value = value
+        self.parent_no = parent_no
         
     def to_dict(self):
         return {
@@ -97,7 +101,8 @@ class PartData():
             'limit_down': self.limit_down,
             'limit_up': self.limit_up,
             'part_no': self.part_no,
-            'value': self.value
+            'value': self.value,
+            'parent_no' : self.parent_no
         }
 
     @classmethod
@@ -109,10 +114,28 @@ class PartData():
                 'limit_up': float,  
                 'limit_down': float,  
                 'part_no': str,  
+                'parent_no': str,  
                 # Add more columns as needed
                 }
         return column
         
+
+class ProductData():
+    
+    def __init__(self, product_no: str = None, ):
+        self.product_no = product_no
+        
+    def to_dict(self):
+        return 
+
+    @classmethod
+    def get_column(cls) -> Dict[str, Any]:
+        column = {
+                'product_no': str,    
+                }
+        return column
+        
+    
 
 class DataControl(ABC):
     
@@ -133,48 +156,9 @@ class DataControl(ABC):
         with open(self.file_path, mode='w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(header)
-
-
+            
     @abstractmethod
-    def save_data(self):
-        pass
-
-
-    @abstractmethod
-    def create_random_test_data(self):
-        pass
-
-class PartDataControl(DataControl):
-
-
-    def __init__(self, data_name = 'data1', date_start = None, date_end = None):
-        super().__init__(data_name=data_name, date_start=date_start, date_end=date_end)
-        self.COLUMN = PartData().get_column()
-    
-    def delete_data_except_header(self) -> None:
-        super().delete_data_except_header()
-        
-        
-    def get_all_unique_part_no(self) -> List[str]:
-        
-        if not os.path.exists(self.file_path):
-            return []
-        
-        # You may optionally read the content you just wrote
-        with open(self.file_path, "r") as f:
-            csv_reader = csv.DictReader(f)
-
-            # Use a set to store unique part_no values
-            unique_part_nos = set()
-
-            for row in csv_reader:
-                part_no_value = row.get('part_no')
-                if part_no_value not in unique_part_nos:
-                    unique_part_nos.add(part_no_value)
-
-        return list(unique_part_nos)
-    
-    def save_data(self, data_list: List[PartData]) -> None:
+    def save_data(self, data_list: List[object]) -> None:
         
         if len(self.COLUMN) == 0:
             return 
@@ -182,44 +166,139 @@ class PartDataControl(DataControl):
         with open(self.file_path, mode='a', newline='') as file:
             writer = csv.writer(file)
             for data in data_list:
-                # 데이터 형식에 맞게 데이터를 추출하여 저장
                 row_data = [getattr(data, column_name) for column_name in self.COLUMN.keys()]
                 writer.writerow(row_data)
 
-            
-    def get_data_with_part_no(self, part_no: str) -> List[str]:
-
-        # file check
+    @abstractmethod
+    def get_all_unique_no(self, no_column: str) -> List[str]:
+        
         if not os.path.exists(self.file_path):
-            self.create_random_test_data()
-            
+            return []
+        
         # You may optionally read the content you just wrote
         with open(self.file_path, "r") as f:
             csv_reader = csv.DictReader(f)
             
-            # Convert CSV data to a list of dictionaries with type conversions
-            data_list = []
+            # Use a set to store unique part_no values
+            unique_part_nos = set()
             for row in csv_reader:
-                # Check if the part_no column matches the desired value
-                if row.get('part_no') == part_no:
-                    # Check if a date filter is provided
-                    if self.date_start and self.date_end:
-                        row_date = row.get('datetime')  # Assuming 'date' is the name of the date column
-                        if self.date_start <= row_date <= self.date_end:
-                            converted_row = {}
-                            for column, value in row.items():
-                                # Perform type conversion based on the defined types
-                                column_type = self.COLUMN.get(column, str)
-                                converted_row[column] = column_type(value)
-                            data_list.append(converted_row)
-                    else:
-                        converted_row = {}
-                        for column, value in row.items():
-                            # Perform type conversion based on the defined types
-                            column_type = self.COLUMN.get(column, str)
-                            converted_row[column] = column_type(value)
-                        data_list.append(converted_row)
+                part_no_value = row.get(no_column)
+                if part_no_value not in unique_part_nos:
+                    unique_part_nos.add(part_no_value)
 
+        return list(unique_part_nos)
+
+
+    @abstractmethod
+    def create_random_test_data(self):
+        pass
+
+
+
+
+class ProductDataControl(DataControl):
+
+    def __init__(self, data_name = 'product', date_start = None, date_end = None):
+        super().__init__(data_name=data_name, date_start=date_start, date_end=date_end)
+        
+        self.COLUMN = ProductData().get_column()
+    
+    def save_data(self, data_list: List[ProductData]) -> None:
+        super().save_data(data_list)
+    
+    def _generate_lot_from_date(self, date) -> str:
+        date_str = date.replace('-', '').replace('_', '')
+        lot = f'{date_str}01'
+        return lot
+    
+    def get_all_unique_no(self) -> List[str]:
+        return super().get_all_unique_no('product_no')
+        
+    def create_random_test_data(self) -> None:
+        
+        self.delete_data_except_header()
+        product_no_candidate_list = ['PRODUCT-AC', 'PRODUCT-BO', 'PRODUCT-DZ', 'PRODUCT-WG', 'PRODUCT-DH', 'PRODUCT-PU']
+        
+        for _, product_name in enumerate(product_no_candidate_list):
+            
+            for index in range(10, 20):
+                
+                today = datetime.today()
+                start_date = today - timedelta(days= 365)
+                end_date = today
+                
+                date_range = pd.date_range(start_date, end_date, freq='D')  
+                date_list = [date.strftime('%Y-%m-%d') for date in date_range]
+                
+                lot_list = [self._generate_lot_from_date(date) for date in date_list]
+                
+                
+                num_values = len(date_list)
+                
+                num_median = 30
+                values = [num_median]*num_values
+                product_no_list = [f'{product_name}{index:03d}']*num_values
+                
+                
+                for _ in range(10):
+                    num_random = np.sqrt(np.random.randint(1, 100))
+                    values = [ (value + np.random.randint(-num_random, num_random)) for value in values]
+                
+                limit_up_list = [60]*num_values
+                limit_down_list = [0]*num_values
+                
+                data_obj_list= []
+                for index, _ in enumerate(lot_list):
+                    data_obj = ProductData(
+                            product_no=product_no_list[index]
+                            )
+                    data_obj_list.append(data_obj)
+                    
+                self.save_data(data_obj_list)
+
+class PartDataControl(DataControl):
+
+
+    def __init__(self, data_name = 'data1', date_start = None, date_end = None):
+        super().__init__(data_name = data_name, date_start = date_start, date_end= date_end)
+        
+        self.COLUMN = PartData().get_column()
+        
+        # file check
+        if not os.path.exists(self.file_path):
+            # create random test for demo
+            self.create_random_test_data()
+
+    
+    def delete_data_except_header(self) -> None:
+        super().delete_data_except_header()
+        
+        
+    def get_all_unique_no(self) -> List[str]:
+        return super().get_all_unique_no('part_no')
+    
+    def save_data(self, data_list: List[PartData]) -> None:
+        super().save_data(data_list)
+
+            
+    def get_data_with_part_no(self, part_no: str, date_start: str, date_end: str) -> List[str]:
+        
+        date_start = date_start
+        date_end = date_end
+        
+        if type(date_start) is datetime:
+            date_start = date_start.strftime("%Y-%m-%d")
+            
+        if type(date_end) is datetime:
+            date_end = date_end.strftime("%Y-%m-%d")
+            
+        df = pd.read_csv(self.file_path)
+        # Filter data based on part_no and date range
+        mask = (df['part_no'] == part_no) & (df['datetime'] >= date_start) & (df['datetime'] <= date_end)
+        filtered_df = df[mask]
+
+        # Convert the filtered DataFrame to a list of dictionaries
+        data_list = filtered_df.to_dict(orient='records')
         return data_list
     
     def _generate_lot_from_date(self, date) -> str:
@@ -228,44 +307,58 @@ class PartDataControl(DataControl):
         return lot
 
     def create_random_test_data(self) -> None:
-        
+        start_time = time.time()
         self.delete_data_except_header()
         
-        for index in range(10, 20):
-            # year of 2022 
-            today = datetime.today()
-            start_date = today - timedelta(days= 365)
-            end_date = today
-            date_range = pd.date_range(start_date, end_date, freq='D')  
+        part_no_candidate_list = ['AC', 'BO', 'CZ', 'WG', 'DH', 'PU']
+        num_part_no_child_candidat_list = [ num for num in range(1, 11)]
+        
+        for _, part_name in enumerate(part_no_candidate_list):
             
-            date_list = [date.strftime('%Y-%m-%d') for date in date_range]
-            
-            lot_list = [self._generate_lot_from_date(date) for date in date_list]
-            
-            
-            num_values = len(date_list)
-            
-            num_median = 30
-            values = [num_median]*num_values
-            part_no_list = [f'A{index}']*num_values
-            
-            
-            for _ in range(10):
-                num_random = np.sqrt(np.random.randint(1, 100))
-                values = [ (value + np.random.randint(-num_random, num_random)) for value in values]
-            
-            limit_up_list = [60]*num_values
-            limit_down_list = [0]*num_values
-            
-            data_obj_list= []
-            for index, _ in enumerate(lot_list):
-                data_obj = PartData(lot = lot_list[index], 
-                                    limit_down=limit_down_list[index], 
-                                    limit_up=limit_up_list[index],
-                                    part_no=part_no_list[index],
-                                    value = values[index],
-                                    datetime=date_list[index]
-                                    )
-                data_obj_list.append(data_obj)
+            for index in range(10, 20):
                 
-            self.save_data(data_obj_list)
+                for child_index in num_part_no_child_candidat_list:
+                    today = datetime.today()
+                    start_date = today - timedelta(days= 365)
+                    end_date = today
+                    
+                    date_range = pd.date_range(start_date, end_date, freq='D')  
+                    date_list = [date.strftime('%Y-%m-%d') for date in date_range]
+                    
+                    lot_list = [self._generate_lot_from_date(date) for date in date_list]
+                    
+                    
+                    num_values = len(date_list)
+                    
+                    num_median = 30
+                    values = [num_median]*num_values
+                    part_no_list = [f'{part_name}{index:03d}-{child_index:02d}']*num_values
+                    parent_no_list = [f'PRODUCT-{part_name}{index:03d}']*num_values
+                    
+                    for _ in range(10):
+                        num_random = np.sqrt(np.random.randint(1, 100))
+                        values = [ (value + np.random.randint(-num_random, num_random)) for value in values]
+                    
+                    limit_up_list = [60]*num_values
+                    limit_down_list = [0]*num_values
+                    
+                    data_obj_list= []
+                    for index, _ in enumerate(lot_list):
+                        data_obj = PartData(lot = lot_list[index], 
+                                            limit_down=limit_down_list[index], 
+                                            limit_up=limit_up_list[index],
+                                            part_no=part_no_list[index],
+                                            value = values[index],
+                                            datetime=date_list[index],
+                                            parent_no=parent_no_list[index]
+                                            )
+                        data_obj_list.append(data_obj)
+                        
+                    self.save_data(data_obj_list)
+                    
+        # 코드 실행 종료 시간 기록
+        end_time = time.time()
+        
+        # 실행 시간 계산 및 출력
+        execution_time = end_time - start_time
+        print(f"코드 실행 시간: {execution_time} 초")
