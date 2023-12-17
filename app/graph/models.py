@@ -122,7 +122,7 @@ class ProductData(BaseData):
 
 
 @dataclass
-class PartChildData(BaseData):
+class ProductChildData(BaseData):
     product_no: str = None
     child_part_no: str = None
     
@@ -196,16 +196,50 @@ class DataControlBase(ABC):
         pass
 
 
-class ProductChildControl(DataControlBase):
+class ProductChildDataControl(DataControlBase):
     
     def __init__(self, data_name= 'product_child'):
         super().__init__(data_name=data_name)
         
-        self.COLUMN = PartChildData().get_column()
+        self.COLUMN = ProductChildData().get_column()
         
-    def create_random_test_data(self):
-        super().create_random_test_data()
+        # file check
+        if not os.path.exists(self.file_path):
+            # create random test for demo
+            self.create_random_test_data()
+            
+    def create_random_test_data(self) -> None:
+        self.delete_data_except_header()
+        data = self.get_demo_data()
+        self.save_data(data)
+    
+    def get_child_data_part_no_list(self, product_no: str) -> List[str]:
+        
+        df = pd.read_csv(self.file_path)
+        filtered_df = df[df['product_no'] == product_no]
+        part_no_list = filtered_df['child_part_no'].tolist()
+        print(part_no_list)
+        
+        return part_no_list
 
+    
+    def get_demo_data(self) -> Dict[str, str]:
+        part_data_list = PartData().get_demo_data_list()
+        product_data_list = ProductData().get_demo_data_list()
+        
+        result = []
+        for i in range(10, 20):
+            for product_data in product_data_list:
+                for part_data in part_data_list:
+                    if part_data == product_data[-2:]:
+                        for i_child in range(1, 11):
+                            product_child_data = ProductChildData(product_no=f"{product_data}{i:03d}", child_part_no=f"{part_data}{i:03d}-{i_child:02d}")
+                            result.append(product_child_data)
+        return result
+    
+    def save_data(self, data_list: List[ProductChildData]) -> None:
+        super().save_data(data_list)
+    
     def get_all_unique_no(self):
         pass
 
@@ -336,10 +370,8 @@ class PartDataControl(DataControlBase):
         lot = f'{date_str}01'
         return lot
 
-    def create_random_test_data(self) -> None:
-        start_time = time.time()
-        self.delete_data_except_header()
-
+    def get_random_test_data_list(self):
+        
         part_no_candidate_list = PartData().get_demo_data_list()
         num_part_no_child_candidate_list = [num for num in range(1, 11)]
 
@@ -379,9 +411,14 @@ class PartDataControl(DataControlBase):
                                             parent_no=parent_no_list[i]
                                             )
                         data_obj_list.append(data_obj)  # Append the data object to the list
+        return data_obj_list
+    
+    
+    def create_random_test_data(self) -> None:
+        start_time = time.time()
+        self.delete_data_except_header()
 
-        # Save all data objects at once
-        self.save_data(data_obj_list)
+        self.save_data(self.get_random_test_data_list())
 
         # 코드 실행 종료 시간 기록
         end_time = time.time()

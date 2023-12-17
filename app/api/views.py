@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, date
 
 from flask import render_template, current_app, jsonify, request, redirect
 
-from app.graph.models import PartNo, PartDataControl, ProductDataControl
+from app.graph.models import PartNo, PartDataControl, ProductDataControl, ProductChildDataControl
 from . import api_bp 
 
 import numpy as np
@@ -61,5 +61,12 @@ def get_part_color():
     color = pn.get_color(date_start, date_end)
     
     data = { 'color' : color }
+    
+    return jsonify(data)
+
+@api_bp.route('/graph/create/product_child', methods=['GET'])
+def create_product_child():
+    aa =  ProductChildDataControl()
+    data = aa.get_demo_data()
     
     return jsonify(data)

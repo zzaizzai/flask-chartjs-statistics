@@ -5,7 +5,7 @@ from flask import render_template, current_app, request, flash
 
 from . import graph_bp 
 from .random_data import get_minY_maxY
-from .models import AnalysisData, PartDataControl, ProductDataControl
+from .models import AnalysisData, PartDataControl, ProductDataControl, ProductChildDataControl
 
 from dateutil.relativedelta import relativedelta
 
@@ -103,6 +103,8 @@ def show_part_detail():
 
 @graph_bp.route('/show_product_detail')
 def show_product_detail():
+    
+    product_no = request.args.get('product_no', default='PRODUCT-AC010', type=str)
     date_start = request.args.get('date_start', default=None, type=str)
     date_end = request.args.get('date_end', default=None, type=str)
     
@@ -113,9 +115,11 @@ def show_product_detail():
     
     # get parts of product
     
+    product_child_data_control = ProductChildDataControl()
+    child_part_no_list = product_child_data_control.get_child_data_part_no_list(product_no)
     context = {
-        'product_no': 'AC018',
-        'part_no_list' : ['DH014-03', 'PU011-03'],
+        'product_no': product_no,
+        'part_no_list' : child_part_no_list,
         'date_end' : date_end,
         'date_start' : date_start,
         }
