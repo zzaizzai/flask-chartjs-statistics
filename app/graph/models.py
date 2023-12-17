@@ -1,18 +1,18 @@
 import csv
-import json
 import os
 import time
 from datetime import datetime, timedelta
-from typing import Tuple, Dict, Any, List, Optional
+from dataclasses import dataclass, asdict
+from typing import Tuple, Dict, Any, List, Optional, Type, get_type_hints
 from abc import ABC, abstractmethod
-from scipy.stats import truncnorm
 
-from flask import Flask, current_app
+from flask import current_app
 
 import numpy as np
 import pandas as pd
 from dateutil.relativedelta import relativedelta
-import concurrent.futures
+from scipy.stats import truncnorm
+
 
 class AnalysisData():
     
@@ -81,68 +81,69 @@ class PartNo():
         if num_error > (len(part_no_data)/500):
             return 'orange'
         
-
         return 'blue'
 
-class PartData():
+#############
+# DataModel #
+#############
+
+class BaseData(ABC):
     
-    def __init__(self, datetime = None, lot: str = None, limit_down: float = None, limit_up: float = None, part_no: str = None, value: float = None, parent_no: str = None):
-        self.datetime = datetime
-        self.lot = lot
-        self.limit_down = limit_down
-        self.limit_up = limit_up
-        self.part_no = part_no
-        self.value = value
-        self.parent_no = parent_no
-        
     def to_dict(self):
-        return {
-            'datetime': self.datetime,
-            'lot': self.lot,
-            'limit_down': self.limit_down,
-            'limit_up': self.limit_up,
-            'part_no': self.part_no,
-            'value': self.value,
-            'parent_no' : self.parent_no
-        }
-
-    @classmethod
-    def get_column(cls) -> Dict[str, Any]:
-        column = {
-                'lot': str,    
-                'value': float,    
-                'datetime': str, 
-                'limit_up': float,  
-                'limit_down': float,  
-                'part_no': str,  
-                'parent_no': str,  
-                # Add more columns as needed
-                }
-        return column
-        
-
-class ProductData():
+            return {field: getattr(self, field) for field in self.get_column().keys()}
     
-    def __init__(self, product_no: str = None, ):
-        self.product_no = product_no
-        
-    def to_dict(self):
-        return 
-
     @classmethod
-    def get_column(cls) -> Dict[str, Any]:
-        column = {
-                'product_no': str,    
-                }
-        return column
-        
+    def get_column(cls) -> Dict[str, Type]:
+        return get_type_hints(cls)
+
+
+@dataclass
+class PartData(BaseData):
+    datetime: str = None
+    lot: str = None
+    limit_down: float = None
+    limit_up: float = None
+    part_no: str = None
+    value: float = None
+    parent_no: str = None
+    
+    @classmethod
+    def get_demo_data_list(cls) -> List[str]:
+        return ['AC', 'BO', 'CZ', 'WG', 'DH', 'PU']
+
+
+@dataclass
+class ProductData(BaseData):
+    product_no: str = None
+    
+    @classmethod
+    def get_demo_data_list(cls) -> List[str]:
+        return ['PRODUCT-AC', 'PRODUCT-BO', 'PRODUCT-DZ', 'PRODUCT-WG', 'PRODUCT-DH', 'PRODUCT-PU']
+
+
+@dataclass
+class PartChildData(BaseData):
+    product_no: str = None
+    child_part_no: str = None
+    
     
 
-class DataControl(ABC):
+
+
+
+###############
+# DataControl #
+###############
+
+class DataControlBase(ABC):
     
     COLUMN = {}
     
-    def __init__(self, data_name: str, date_start = None, date_end = None):
+    def __init__(self, 
+                data_name: str, 
+                date_start = None, 
+                date_end = None
+                ):
         
         self.data_name = data_name
         self.save_dir = current_app.config["SAVE_DIR"]
@@ -195,15 +196,39 @@ class DataControl(ABC):
         pass
 
 
+class ProductChildControl(DataControlBase):
+    
+    def __init__(self, data_name= 'product_child'):
+        super().__init__(data_name=data_name)
+        
+        self.COLUMN = PartChildData().get_column()
+        
+    def create_random_test_data(self):
+        super().create_random_test_data()
+
+    def get_all_unique_no(self):
+        pass
 
 
-class ProductDataControl(DataControl):
+class ProductDataControl(DataControlBase):
 
-    def __init__(self, data_name = 'product', date_start = None, date_end = None):
-        super().__init__(data_name=data_name, date_start=date_start, date_end=date_end)
+    def __init__(self, 
+                data_name = 'product', 
+                date_start = None, 
+                date_end = None
+                ):
+        super().__init__(
+            data_name=data_name, 
+            date_start=date_start, 
+            date_end=date_end)
         
         self.COLUMN = ProductData().get_column()
-    
+        
+        # file check
+        if not os.path.exists(self.file_path):
+            # create random test for demo
+            self.create_random_test_data()
+            
     def save_data(self, data_list: List[ProductData]) -> None:
         super().save_data(data_list)
     
@@ -216,12 +241,14 @@ class ProductDataControl(DataControl):
         return super().get_all_unique_no('product_no')
         
     def get_part_no_list_of_product(self) -> List[str]:
-        return
+        pass
+    # TODO get part no list from product_child.csv
     
     def create_random_test_data(self) -> None:
         
         self.delete_data_except_header()
-        product_no_candidate_list = ['PRODUCT-AC', 'PRODUCT-BO', 'PRODUCT-DZ', 'PRODUCT-WG', 'PRODUCT-DH', 'PRODUCT-PU']
+        product_no_candidate_list = ProductData().get_demo_data_list()
+        
         data_obj_list = []  # Create an empty list to hold all data objects
         for _, product_name in enumerate(product_no_candidate_list):
             
@@ -252,21 +279,21 @@ class ProductDataControl(DataControl):
                 limit_down_list = [0]*num_values
                 
                 for index, _ in enumerate(lot_list):
-                    data_obj = ProductData(
-                            product_no=product_no_list[index]
-                            )
+                    data_obj = ProductData()
+                    data_obj.product_no=product_no_list[index]
+                    
                     data_obj_list.append(data_obj)
                     
         self.save_data(data_obj_list)
 
-class PartDataControl(DataControl):
+class PartDataControl(DataControlBase):
 
 
     def __init__(self, data_name = 'data1', date_start = None, date_end = None):
         super().__init__(data_name = data_name, date_start = date_start, date_end= date_end)
         
-        self.COLUMN = PartData().get_column()
-        
+        self.COLUMN = PartData.get_column()
+
         # file check
         if not os.path.exists(self.file_path):
             # create random test for demo
@@ -313,7 +340,7 @@ class PartDataControl(DataControl):
         start_time = time.time()
         self.delete_data_except_header()
 
-        part_no_candidate_list = ['AC', 'BO', 'CZ', 'WG', 'DH', 'PU']
+        part_no_candidate_list = PartData().get_demo_data_list()
         num_part_no_child_candidate_list = [num for num in range(1, 11)]
 
         data_obj_list = []  # Create an empty list to hold all data objects
