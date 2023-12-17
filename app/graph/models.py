@@ -5,6 +5,7 @@ import time
 from datetime import datetime, timedelta
 from typing import Tuple, Dict, Any, List, Optional
 from abc import ABC, abstractmethod
+from scipy.stats import truncnorm
 
 from flask import Flask, current_app
 
@@ -309,56 +310,53 @@ class PartDataControl(DataControl):
     def create_random_test_data(self) -> None:
         start_time = time.time()
         self.delete_data_except_header()
-        
+
         part_no_candidate_list = ['AC', 'BO', 'CZ', 'WG', 'DH', 'PU']
-        num_part_no_child_candidat_list = [ num for num in range(1, 11)]
-        
-        for _, part_name in enumerate(part_no_candidate_list):
-            
+        num_part_no_child_candidate_list = [num for num in range(1, 11)]
+
+        data_obj_list = []  # Create an empty list to hold all data objects
+
+        for part_name in part_no_candidate_list:
             for index in range(10, 20):
-                
-                for child_index in num_part_no_child_candidat_list:
+                for child_index in num_part_no_child_candidate_list:
                     today = datetime.today()
-                    start_date = today - timedelta(days= 365)
+                    start_date = today - timedelta(days=365)
                     end_date = today
-                    
-                    date_range = pd.date_range(start_date, end_date, freq='D')  
+
+                    date_range = pd.date_range(start_date, end_date, freq='D')
                     date_list = [date.strftime('%Y-%m-%d') for date in date_range]
-                    
+
                     lot_list = [self._generate_lot_from_date(date) for date in date_list]
-                    
-                    
+
                     num_values = len(date_list)
-                    
+                    std_dev = np.random.randint(1, 20)
                     num_median = 30
-                    values = [num_median]*num_values
-                    part_no_list = [f'{part_name}{index:03d}-{child_index:02d}']*num_values
-                    parent_no_list = [f'PRODUCT-{part_name}{index:03d}']*num_values
                     
-                    for _ in range(10):
-                        num_random = np.sqrt(np.random.randint(1, 100))
-                        values = [ (value + np.random.randint(-num_random, num_random)) for value in values]
-                    
-                    limit_up_list = [60]*num_values
-                    limit_down_list = [0]*num_values
-                    
-                    data_obj_list= []
-                    for index, _ in enumerate(lot_list):
-                        data_obj = PartData(lot = lot_list[index], 
-                                            limit_down=limit_down_list[index], 
-                                            limit_up=limit_up_list[index],
-                                            part_no=part_no_list[index],
-                                            value = values[index],
-                                            datetime=date_list[index],
-                                            parent_no=parent_no_list[index]
+                    values = truncnorm.rvs((-70 - num_median) / std_dev, (70 - num_median) / std_dev, loc=num_median, scale=std_dev, size=num_values)
+
+                    part_no_list = [f'{part_name}{index:03d}-{child_index:02d}'] * num_values
+                    parent_no_list = [f'PRODUCT-{part_name}{index:03d}'] * num_values
+
+                    limit_up_list = [60] * num_values
+                    limit_down_list = [0] * num_values
+
+                    for i, _ in enumerate(lot_list):
+                        data_obj = PartData(lot=lot_list[i],
+                                            limit_down=limit_down_list[i],
+                                            limit_up=limit_up_list[i],
+                                            part_no=part_no_list[i],
+                                            value=values[i],
+                                            datetime=date_list[i],
+                                            parent_no=parent_no_list[i]
                                             )
-                        data_obj_list.append(data_obj)
-                        
-                    self.save_data(data_obj_list)
-                    
+                        data_obj_list.append(data_obj)  # Append the data object to the list
+
+        # Save all data objects at once
+        self.save_data(data_obj_list)
+
         # 코드 실행 종료 시간 기록
         end_time = time.time()
-        
+
         # 실행 시간 계산 및 출력
         execution_time = end_time - start_time
         print(f"코드 실행 시간: {execution_time} 초")
