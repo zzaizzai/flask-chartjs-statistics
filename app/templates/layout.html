@@ -7,10 +7,69 @@
     <title>{% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
+
+<style>
+
+
+.alert {
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    position: relative;
+}
+
+.alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.alert-error {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+.alert-warning {
+    color: #856404;
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+}
+
+.close-alert {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: transparent; /* 배경색을 투명으로 설정 */
+    border: none;
+    outline: none;
+    cursor: pointer;
+    font-size: 24px;
+    color: #856404; /* 아이콘 색상 변경 */
+}
+</style>
+
 <body>
     <div id="navbar">
         {% include 'navbar.html' %}
     </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }}">
+        {{ message }}
+        <button class="close-alert" onclick="closeAlert(this)">x</button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+    <script>
+        function closeAlert(buttonElement) {
+            var alertDiv = buttonElement.parentElement;
+            alertDiv.style.display = 'none';
+        }
+    </script>
     <div id="content">
         {% block content %}{% endblock %}
     </div>

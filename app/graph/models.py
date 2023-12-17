@@ -215,11 +215,14 @@ class ProductDataControl(DataControl):
     def get_all_unique_no(self) -> List[str]:
         return super().get_all_unique_no('product_no')
         
+    def get_part_no_list_of_product(self) -> List[str]:
+        return
+    
     def create_random_test_data(self) -> None:
         
         self.delete_data_except_header()
         product_no_candidate_list = ['PRODUCT-AC', 'PRODUCT-BO', 'PRODUCT-DZ', 'PRODUCT-WG', 'PRODUCT-DH', 'PRODUCT-PU']
-        
+        data_obj_list = []  # Create an empty list to hold all data objects
         for _, product_name in enumerate(product_no_candidate_list):
             
             for index in range(10, 20):
@@ -248,14 +251,13 @@ class ProductDataControl(DataControl):
                 limit_up_list = [60]*num_values
                 limit_down_list = [0]*num_values
                 
-                data_obj_list= []
                 for index, _ in enumerate(lot_list):
                     data_obj = ProductData(
                             product_no=product_no_list[index]
                             )
                     data_obj_list.append(data_obj)
                     
-                self.save_data(data_obj_list)
+        self.save_data(data_obj_list)
 
 class PartDataControl(DataControl):
 

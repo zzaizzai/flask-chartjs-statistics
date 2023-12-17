@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timedelta
 
-from flask import render_template, current_app, request
+from flask import render_template, current_app, request, flash
 
 from . import graph_bp 
 from .random_data import get_minY_maxY
@@ -12,7 +12,6 @@ from dateutil.relativedelta import relativedelta
 
 @graph_bp.route('/')
 def tasks_page():
-
     return "graph page"
 
 
@@ -36,16 +35,19 @@ def show_parts():
             date_end = today.strftime("%Y-%m-%d")
     
     
-    dc = PartDataControl()
-    part_no_list = dc.get_all_unique_no()
+    try:
+        dc = PartDataControl()
+        part_no_list = dc.get_all_unique_no()
 
-    context = {
-        'part_no_list': part_no_list,
-        'date_start': date_start,
-        'date_end' : date_end
+        context = {
+            'part_no_list': part_no_list,
+            'date_start': date_start,
+            'date_end' : date_end
+            
+        }
+    except Exception as e:
+        flash(e, 'error')
         
-    }
-    
     return render_template('part_list.html', **context)
 
 
@@ -101,8 +103,22 @@ def show_part_detail():
 
 @graph_bp.route('/show_product_detail')
 def show_product_detail():
+    date_start = request.args.get('date_start', default=None, type=str)
+    date_end = request.args.get('date_end', default=None, type=str)
     
-    context = {}
+    if date_start is None and date_end is None:
+        today = datetime.today()
+        date_start = (today - relativedelta(months=12)).strftime("%Y-%m-%d")
+        date_end = today.strftime("%Y-%m-%d")
+    
+    # get parts of product
+    
+    context = {
+        'product_no': 'AC018',
+        'part_no_list' : ['DH014-03', 'PU011-03'],
+        'date_end' : date_end,
+        'date_start' : date_start,
+        }
     return render_template('product_detail.html', **context)
 
 
