@@ -8,20 +8,22 @@
 
 
 <style>
-#partColors {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
+    #partColors {
+        display: flex;
+        flex-direction: row; /* 가로로 나열되도록 변경 */
+        flex-wrap: wrap; /* 화면 너비를 벗어나면 다음 줄로 넘어가도록 설정 */
+        justify-content: flex-start; /* 왼쪽 정렬 */
+    }
 
-.partItem {
-    margin-bottom: 10px;
-    padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
+    .partItem {
+        margin-right: 10px; /* 객체 사이의 간격을 조절하려면 margin-right 사용 */
+        margin-bottom: 10px;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        cursor: pointer;
+        width: 8em;
+    }
 </style>
 
 <!-- product_no -->
@@ -29,10 +31,10 @@
 
 
 <!-- parts -->
+<h3>Part No.</h3>
 <div id="partColors">
-    <h3>Parts</h3>
     {% for part_no in part_no_list %}
-    <div class="partItem" data-part-no="{{ part_no }}">Part No: {{ part_no }}</div>
+    <a href="{{ url_for('graph.show_part_detail', part_no=part_no, date_start=date_start, date_end=date_end) }}"><div class="partItem" data-part-no="{{ part_no }}">{{ part_no }}</div></a>
     {% endfor %}
 </div>
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
